@@ -1,8 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from db import supabase
 from datetime import date
 
 app = Flask(__name__)
+CORS(app)
 
 # ── Tool 1: Add a deadline ──────────────────────────────
 @app.route('/add', methods=['POST'])
@@ -59,7 +61,10 @@ def complete_deadline(deadline_id):
 @app.route('/', methods=['GET'])
 def health():
     return jsonify({"status": "DeadlineBot API is running 🚀"}), 200
-
+# ── Dashboard ───────────────────────────────────────────
+@app.route('/dashboard', methods=['GET'])
+def dashboard():
+    return render_template('dashboard.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

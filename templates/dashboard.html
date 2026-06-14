@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DeadlineBot Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a1a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid rgba(0,212,255,0.2);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+    }
+    header h1 {
+      font-size: 1.4rem;
+      color: #00d4ff;
+      letter-spacing: 1px;
+    }
+    header span {
+      font-size: 0.85rem;
+      color: #888;
+      margin-left: auto;
+    }
+    .pulse {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 8px #00ff88;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      flex: 1;
+      gap: 0;
+      height: calc(100vh - 60px);
+    }
+
+    /* ── Left: Chat Panel ── */
+    .chat-panel {
+      flex: 1;
+      border-right: 1px solid rgba(0,212,255,0.15);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 16px;
+    }
+    .chat-panel h2 {
+      font-size: 0.9rem;
+      color: #00d4ff;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.7;
+    }
+    .chat-window {
+      flex: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(0,212,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .msg.user {
+      background: rgba(0,212,255,0.15);
+      border: 1px solid rgba(0,212,255,0.3);
+      align-self: flex-end;
+      color: #e0f7ff;
+    }
+    .msg.bot {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      align-self: flex-start;
+      color: #ccc;
+    }
+    .msg.bot strong { color: #00d4ff; }
+
+    .chat-input {
+      display: flex;
+      gap: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .chat-input input:focus {
+      border-color: rgba(0,212,255,0.6);
+    }
+    .chat-input button {
+      background: linear-gradient(135deg, #00d4ff, #0088cc);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .chat-input button:hover { opacity: 0.85; }
+
+    /* ── Right: Deadline Board ── */
+    .deadline-panel {
+      width: 420px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .deadline-panel h2 {
+      font-size: 0.9rem;
+      color: #ffaa00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.8;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      padding-left: 4px;
+    }
+    .red { color: #ff4444; }
+    .amber { color: #ffaa00; }
+    .green { color: #00cc66; }
+
+    .deadline-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      border-left: 3px solid #555;
+      transition: transform 0.2s;
+    }
+    .deadline-card:hover { transform: translateX(4px); }
+    .deadline-card.red-card { border-left-color: #ff4444; }
+    .deadline-card.amber-card { border-left-color: #ffaa00; }
+    .deadline-card.green-card { border-left-color: #00cc66; }
+
+    .card-subject {
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: #ffffff;
+    }
+    .card-task {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-top: 3px;
+    }
+    .card-meta {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 6px;
+      display: flex;
+      gap: 12px;
+    }
+    .badge {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+
+    .empty {
+      color: #555;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .refresh-btn {
+      background: rgba(255,170,0,0.1);
+      border: 1px solid rgba(255,170,0,0.3);
+      color: #ffaa00;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      width: fit-content;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover {
+      background: rgba(255,170,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="pulse"></div>
+  <h1>📋 DeadlineBot</h1>
+  <span id="clock"></span>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Chat -->
+  <div class="chat-panel">
+    <h2>🤖 Agent Chat</h2>
+    <div class="chat-window" id="chatWindow">
+      <div class="msg bot">
+        Hey Anas! 👋 I'm <strong>DeadlineBot</strong>.<br>
+        Tell me about any upcoming deadline and I'll log it for you.
+        Or ask <em>"show my deadlines"</em> to see what's coming up!
+      </div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="userInput"
+        placeholder="e.g. OS assignment due Friday..."
+        onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Deadline Board -->
+  <div class="deadline-panel">
+    <h2>📅 Live Deadline Board</h2>
+    <button class="refresh-btn" onclick="loadDeadlines()">⟳ Refresh</button>
+    <div id="deadlineBoard">
+      <p class="empty">Loading deadlines...</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      now.toLocaleString('en-IN', {
+        weekday: 'short', month: 'short',
+        day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── Load Deadlines ──
+  async function loadDeadlines() {
+    const board = document.getElementById('deadlineBoard');
+    try {
+      const res = await fetch('/list');
+      const data = await res.json();
+
+      if (!data.length) {
+        board.innerHTML = '<p class="empty">No upcoming deadlines 🎉</p>';
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      let html = '';
+      let lastLabel = '';
+
+      data.forEach(d => {
+        const due = new Date(d.due_date);
+        due.setHours(0,0,0,0);
+        const delta = Math.round((due - today) / 86400000);
+
+        let label, colorClass;
+        if (delta <= 0) {
+          label = '🔴 DUE TODAY'; colorClass = 'red-card';
+        } else if (delta === 1) {
+          label = '🔴 DUE TOMORROW'; colorClass = 'red-card';
+        } else if (delta <= 3) {
+          label = '🟡 DUE SOON'; colorClass = 'amber-card';
+        } else {
+          label = '🟢 COMING UP'; colorClass = 'green-card';
+        }
+
+        const textColor = colorClass === 'red-card' ? 'red' :
+                          colorClass === 'amber-card' ? 'amber' : 'green';
+
+        if (label !== lastLabel) {
+          html += `<p class="section-label ${textColor}">${label}</p>`;
+          lastLabel = label;
+        }
+
+        html += `
+          <div class="deadline-card ${colorClass}">
+            <div class="card-subject">${d.subject}</div>
+            <div class="card-task">${d.task_name}</div>
+            <div class="card-meta">
+              <span>📅 ${d.due_date}</span>
+              <span class="badge">${d.type || 'Task'}</span>
+            </div>
+          </div>`;
+      });
+
+      board.innerHTML = html;
+    } catch(e) {
+      board.innerHTML = '<p class="empty">Failed to load deadlines.</p>';
+    }
+  }
+
+  // ── Chat ──
+  function addMsg(text, role) {
+    const window = document.getElementById('chatWindow');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = text;
+    window.appendChild(div);
+    window.scrollTop = window.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMsg(text, 'user');
+    input.value = '';
+
+    // Simple keyword routing for demo
+    if (text.toLowerCase().includes('show') ||
+        text.toLowerCase().includes('list') ||
+        text.toLowerCase().includes('what')) {
+      await loadDeadlines();
+      addMsg('📋 Deadline board refreshed! Check the panel on the right.', 'bot');
+    } else {
+      addMsg('⏳ Logging deadline... <em>(connect to Foundry API for full AI parsing)</em>', 'bot');
+    }
+  }
+
+  // Auto-load on start
+  loadDeadlines();
+  setInterval(loadDeadlines, 30000); // refresh every 30s
+</script>
+
+</body>
+</html>
