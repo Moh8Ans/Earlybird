@@ -56,7 +56,7 @@ def build_html(deadlines):
     html = """
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
         <h2 style="background:#1a1a2e; color:#00d4ff; padding:16px; border-radius:8px;">
-            📋 DeadlineBot Morning Digest
+            🐦 Earlybird Morning Digest
         </h2>
         <p style="color:#555;">Good morning Anas! Here's what's coming up:</p>
     """
@@ -91,7 +91,7 @@ def build_html(deadlines):
 
     html += """
         <p style="color:#aaa; font-size:12px; margin-top:20px;">
-            Sent by DeadlineBot 🤖 | MES Institute of Technology, Kollam
+            Sent by Earlybird 🐦
         </p>
     </div>
     """
@@ -103,8 +103,7 @@ def send_digest():
     html_body = build_html(deadlines)
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"📋 DeadlineBot Digest — {date.today().strftime('%A, %b %d')}"
-    msg["From"] = SENDER
+    msg["Subject"] = f"🐦 Earlybird Digest — {date.today().strftime('%A, %b %d')}"
     msg["To"] = RECEIVER
 
     msg.attach(MIMEText(html_body, "html"))
