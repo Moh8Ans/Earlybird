@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from db import supabase
 from datetime import date
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -61,10 +62,14 @@ def complete_deadline(deadline_id):
 @app.route('/', methods=['GET'])
 def health():
     return jsonify({"status": "DeadlineBot API is running 🚀"}), 200
+
+
 # ── Dashboard ───────────────────────────────────────────
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     return render_template('dashboard.html')
+
+
 # ── Send Digest ─────────────────────────────────────────
 @app.route('/send-digest', methods=['GET'])
 def send_digest_route():
@@ -72,8 +77,6 @@ def send_digest_route():
     send_digest()
     return jsonify({"message": "✅ Digest sent!"}), 200
 
-import requests as http_requests
-import os
 
 # ── Chat with Foundry Agent ─────────────────────────────
 @app.route('/chat', methods=['POST'])
@@ -82,38 +85,44 @@ def chat():
     user_message = data.get('message', '')
     history = data.get('history', [])
 
-    endpoint = os.environ.get("FOUNDRY_ENDPOINT")
-    key = os.environ.get("FOUNDRY_KEY")
-    agent_name = os.environ.get("AGENT_NAME", "Earlybird")
-
-    if not endpoint or not key:
-        return jsonify({"reply": "⚠️ Foundry not configured."}), 500
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {key}"
-    }
-
-    messages = history + [{"role": "user", "content": user_message}]
-
-    payload = {
-        "model": agent_name,
-        "input": messages
-    }
+    foundry_endpoint = "https://deadlinebot-resource.services.ai.azure.com/api/projects/deadlinebot"
+    agent_name = "Respo7"
 
     try:
-        response = http_requests.post(
-            endpoint,
-            json=payload,
-            headers=headers,
-            timeout=30
-        )
-        result = response.json()
-        reply = result.get("output_text") or \
-                result.get("choices", [{}])[0].get("message", {}).get("content", "No response")
-        return jsonify({"reply": reply}), 200
+        from azure.identity import AzureCliCredential
+        from azure.ai.projects import AIProjectClient
+
+        with (
+    AzureCliCredential() as credential,
+    AIProjectClient(
+        endpoint=foundry_endpoint,
+        credential=credential,
+        allow_preview=True,
+    ) as project_client,
+):
+            openai_client = project_client.get_openai_client(agent_name=agent_name)
+
+            # Build input: if history exists, pass full conversation
+            if history:
+                # Append current user message to history
+                messages = history + [{"role": "user", "content": user_message}]
+                # Responses API accepts a list of messages as input
+                response = openai_client.responses.create(
+                    input=messages,
+                )
+            else:
+                response = openai_client.responses.create(
+                    input=user_message,
+                )
+
+            reply = response.output_text
+            print("EARLYBIRD REPLY:", reply)
+            return jsonify({"reply": reply}), 200
+
     except Exception as e:
-        return jsonify({"reply": f"Error: {str(e)}"}), 500
+        print("CHAT ERROR:", str(e))
+        return jsonify({"reply": f"⚠️ Error: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
