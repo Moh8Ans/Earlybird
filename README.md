@@ -118,6 +118,16 @@ python mcp_server.py
 
 ## 📁 Project Structure
 
+earlybird/
+├── app.py              # Flask API (add, list, complete, chat, dashboard)
+├── digest.py           # Deadline fetching, classification, email builder
+├── telegram_bot.py     # Telegram bot + human-in-the-loop guardrail
+├── mcp_server.py       # MCP server exposing 3 deadline tools
+├── db.py               # Supabase client
+├── SKILL.md            # Agent skill definition for deadline triage
+├── requirements.txt
+└── .env
+
 ---
 
 ## 👤 Author
